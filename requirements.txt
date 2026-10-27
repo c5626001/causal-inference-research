@@ -6,3 +6,4 @@ shap
 scipy
 matplotlib
 jupyter
+torch

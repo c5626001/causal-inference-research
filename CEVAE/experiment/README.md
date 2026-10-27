@@ -1,11 +1,14 @@
-# CEVAE実験: 潜在交絡因子を含む因果推論(2026年度 M1研究)
+# CEVAE実験: 潜在交絡因子を含む因果推論(2026年度 M1前期研究)
+
+CEVAEが抱える崩壊(posterior collapse)の問題を構造的に解消する方向の実験は
+[`iVAE/experiment/`](../../iVAE/experiment) で行っている(M1後期研究)。
 
 CEVAE(Causal Effect Variational Autoencoder)が、潜在交絡因子Zがある状況で
 普通の因果推論手法(X-learner)よりITEを正確に推定できるかを検証する。
 
-生ノートブック(`CEVAE/CEVAE実験.ipynb` 〜 `_v5.ipynb`, `CEVAE診断_seed3.ipynb`)は研究の
-進行過程の記録としてそのまま残し、ここではその中で一番重要な2つの実験
-(v4=1次元Z, v5=2次元Z)を整理し直して、再実行できる形にしてある。
+元になった生ノートブック(`CEVAE実験.ipynb` 〜 `_v5.ipynb`, `CEVAE診断_seed3.ipynb`)は
+探索過程のメモ書きでGitHubには含めていない(ローカルの`claude_code/CEVAE実験/`に残っている)。
+ここではその中で一番重要な2つの実験(v4=1次元Z, v5=2次元Z)を整理し直して、再実行できる形にしてある。
 
 ## フォルダ構成
 
@@ -15,7 +18,8 @@ CEVAE(Causal Effect Variational Autoencoder)が、潜在交絡因子Zがある�
 - `diagnostics.py` — 崩壊(posterior collapse)検出の診断指標
 - `run_1d_experiment.ipynb` — 元v4相当: 潜在交絡因子Zが1次元の場合の実験
 - `run_2d_experiment.ipynb` — 元v5相当: Zが2次元の場合の実験
-- `compare_1d_vs_2d.ipynb` — 上の2つの結果を比較する(発表スライド用の数値・図を作る)
+- `compare_1d_vs_2d.ipynb` — 「1次元のときのCEVAE vs X-learner」「2次元のときのCEVAE vs X-learner」を
+  横に並べて見せる(1次元と2次元そのものを比較しているわけではない。発表スライド用の数値・図を作る)
 - `results/` — 各実験ノートブックが出力したCSVを保存する場所
 
 ## 動かし方

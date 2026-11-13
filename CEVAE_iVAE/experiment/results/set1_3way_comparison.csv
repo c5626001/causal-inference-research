@@ -1,0 +1,4 @@
+method,pehe_mean,collapse_count
+X-learner,3.730,
+normal_CEVAE,4.600,2/10
+CEVAE_iVAE_branching,9.780,5/10

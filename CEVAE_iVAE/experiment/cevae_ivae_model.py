@@ -88,6 +88,22 @@ class EncoderZ(nn.Module):
         return torch.where(tc == 1, mu1, mu0), torch.where(tc == 1, lv1, lv0)
 
 
+class EncoderZShared(nn.Module):
+    """q(z|x,t,y,u): S-learner型。tをスイッチ(head0/head1の選択)ではなく、
+    xやyと同列のただの入力として1本のネットワークに混ぜる。"""
+
+    def __init__(self, d, n_segments, z_dim, hidden):
+        super().__init__()
+        d_in = d + n_segments + 2  # x, u, t, y
+        self.trunk = nn.Sequential(nn.Linear(d_in, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU())
+        self.mu = nn.Linear(hidden, z_dim)
+        self.logvar = nn.Linear(hidden, z_dim)
+
+    def forward(self, x, t, y, u_onehot):
+        h = self.trunk(torch.cat([x, u_onehot, t.unsqueeze(-1), y.unsqueeze(-1)], dim=-1))
+        return self.mu(h), self.logvar(h)
+
+
 class PriorNet(nn.Module):
     """p(z|u): iVAE/experiment/models.py の PriorNet と同じ役割"""
 
@@ -133,17 +149,24 @@ class CEVAEiVAEConfig:
     lr: float = 1e-3
     weight_decay: float = 0.0
     seed: int = 0
+    encoder_z_type: str = "branching"  # "branching"(元のT-learner型, head0/head1) / "shared"(S-learner型, 1本)
 
 
 def build_cevae_ivae(cfg: CEVAEiVAEConfig, d: int):
     torch.manual_seed(cfg.seed)
+    if cfg.encoder_z_type == "shared":
+        encoder_z = EncoderZShared(d, cfg.n_segments, cfg.z_dim, cfg.hidden)
+    elif cfg.encoder_z_type == "branching":
+        encoder_z = EncoderZ(d, cfg.n_segments, cfg.z_dim, cfg.hidden)
+    else:
+        raise ValueError(f"unknown encoder_z_type: {cfg.encoder_z_type!r}")
     return {
         "decoder_x": DecoderX(cfg.z_dim, d, cfg.hidden),
         "decoder_t": DecoderT(cfg.z_dim, cfg.hidden),
         "decoder_y": DecoderY(cfg.z_dim, cfg.hidden),
         "encoder_t": EncoderT(d, cfg.hidden),
         "encoder_y": EncoderY(d, cfg.hidden),
-        "encoder_z": EncoderZ(d, cfg.n_segments, cfg.z_dim, cfg.hidden),
+        "encoder_z": encoder_z,
         "prior_net": PriorNet(cfg.n_segments, cfg.z_dim, cfg.hidden),
     }
 

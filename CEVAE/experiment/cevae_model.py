@@ -81,6 +81,22 @@ class EncoderZ(nn.Module):
         return torch.where(tc == 1, mu1, mu0), torch.where(tc == 1, lv1, lv0)
 
 
+class EncoderZShared(nn.Module):
+    """q(z|x,t,y): S-learner型。tをスイッチ(head0/head1の選択)ではなく、
+    xやyと同列のただの入力として1本のネットワークに混ぜる(CEVAE_iVAE/experiment/のEncoderZSharedと対応)。"""
+
+    def __init__(self, d, z_dim, hidden):
+        super().__init__()
+        d_in = d + 2  # x, t, y
+        self.trunk = nn.Sequential(nn.Linear(d_in, hidden), nn.ReLU(), nn.Linear(hidden, hidden), nn.ReLU())
+        self.mu = nn.Linear(hidden, z_dim)
+        self.logvar = nn.Linear(hidden, z_dim)
+
+    def forward(self, x, t, y):
+        h = self.trunk(torch.cat([x, t.unsqueeze(-1), y.unsqueeze(-1)], dim=-1))
+        return self.mu(h), self.logvar(h)
+
+
 def reparameterize(mu, logvar):
     return mu + torch.exp(0.5 * logvar) * torch.randn_like(mu)
 
@@ -106,17 +122,24 @@ class CEVAEConfig:
     lr: float = 1e-3
     weight_decay: float = 0.0
     seed: int = 0
+    encoder_z_type: str = "branching"  # "branching"(元のT-learner型, head0/head1) / "shared"(S-learner型, 1本)
 
 
 def build_cevae(cfg: CEVAEConfig, d: int):
     torch.manual_seed(cfg.seed)
+    if cfg.encoder_z_type == "shared":
+        encoder_z = EncoderZShared(d, cfg.z_dim, cfg.hidden)
+    elif cfg.encoder_z_type == "branching":
+        encoder_z = EncoderZ(d, cfg.z_dim, cfg.hidden)
+    else:
+        raise ValueError(f"unknown encoder_z_type: {cfg.encoder_z_type!r}")
     return {
         "decoder_x": DecoderX(cfg.z_dim, d, cfg.hidden),
         "decoder_t": DecoderT(cfg.z_dim, cfg.hidden),
         "decoder_y": DecoderY(cfg.z_dim, cfg.hidden),
         "encoder_t": EncoderT(d, cfg.hidden),
         "encoder_y": EncoderY(d, cfg.hidden),
-        "encoder_z": EncoderZ(d, cfg.z_dim, cfg.hidden),
+        "encoder_z": encoder_z,
     }
 
 

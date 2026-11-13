@@ -1,0 +1,3 @@
+method,hidden,lr,kl_anneal_epochs,batch_size,val_elbo
+normal_CEVAE_shared,16,0.0005215261217490826,38,128,29.432071685791016
+CEVAE_iVAE_shared,16,0.0006051758519897317,42,512,29.318885803222656
